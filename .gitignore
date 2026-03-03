@@ -2,4 +2,5 @@
 dist
 .env
 .supabase
+supabase/.temp
 .DS_Store

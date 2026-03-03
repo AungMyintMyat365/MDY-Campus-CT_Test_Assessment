@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
-  const { session, profile, loginEmail, loginCoder } = useAuth();
+  const { session, profile, profileError, loginEmail, loginCoder, logout } = useAuth();
   const [mode, setMode] = useState("staff");
   const [error, setError] = useState("");
 
@@ -15,6 +15,8 @@ export default function LoginPage() {
   if (session && profile?.role === "center_lead") return <Navigate to="/lead/dashboard" replace />;
   if (session && profile?.role === "coach") return <Navigate to="/coach/dashboard" replace />;
   if (session && profile?.role === "coder") return <Navigate to="/coder/dashboard" replace />;
+
+  const missingProfile = session && !profile?.role;
 
   async function handleStaffSubmit(e) {
     e.preventDefault();
@@ -67,6 +69,16 @@ export default function LoginPage() {
       )}
 
       {error ? <p className="error">{error}</p> : null}
+      {missingProfile ? (
+        <div className="card">
+          <p className="error">Signed in, but no role/profile found for this account.</p>
+          <p>Ask admin to create/update your row in `public.profiles` with correct role.</p>
+          <p><strong>Signed-in Auth Email:</strong> {session?.user?.email ?? "-"}</p>
+          <p><strong>Signed-in Auth User ID:</strong> {session?.user?.id ?? "-"}</p>
+          {profileError ? <p><strong>Profile Query Error:</strong> {profileError}</p> : null}
+          <button type="button" onClick={logout}>Sign Out</button>
+        </div>
+      ) : null}
     </main>
   );
 }

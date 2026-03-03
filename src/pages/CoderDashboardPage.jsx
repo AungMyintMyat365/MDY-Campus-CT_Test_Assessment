@@ -1,4 +1,5 @@
-﻿import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
+import { coderDisplayName } from "../lib/displayName";
 
 export default function CoderDashboardPage() {
   const { profile, logout } = useAuth();
@@ -6,7 +7,7 @@ export default function CoderDashboardPage() {
   return (
     <main className="container">
       <h1>Coder Dashboard</h1>
-      <p>Welcome, {profile?.full_name ?? profile?.coder_id ?? "Coder"}.</p>
+      <p>Welcome, {coderDisplayName(profile)}.</p>
       <ul>
         <li>View assigned assessments</li>
         <li>Open Google Form links</li>

@@ -10,6 +10,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   role app_role not null,
   full_name text not null,
+  nickname text,
   email text unique,
   coder_id text unique,
   is_active boolean not null default true,
@@ -19,6 +20,9 @@ create table if not exists public.profiles (
     (role = 'coder' and coder_id is not null) or (role <> 'coder')
   )
 );
+
+alter table public.profiles
+add column if not exists nickname text;
 
 create table if not exists public.classes (
   id uuid primary key default gen_random_uuid(),

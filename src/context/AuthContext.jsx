@@ -7,6 +7,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [profileError, setProfileError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export function AuthProvider({ children }) {
         await loadProfile(nextSession.user.id);
       } else {
         setProfile(null);
+        setProfileError("");
       }
     });
 
@@ -42,16 +44,36 @@ export function AuthProvider({ children }) {
   async function loadProfile(userId) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, role, email, coder_id")
+      .select("id, full_name, nickname, role, email, coder_id")
       .eq("id", userId)
       .single();
 
-    if (error) {
-      setProfile(null);
+    if (!error) {
+      setProfile(data);
+      setProfileError("");
       return;
     }
 
-    setProfile(data);
+    if (String(error.message || "").includes("nickname")) {
+      const fallback = await supabase
+        .from("profiles")
+        .select("id, full_name, role, email, coder_id")
+        .eq("id", userId)
+        .single();
+
+      if (!fallback.error) {
+        setProfile({ ...fallback.data, nickname: null });
+        setProfileError("");
+        return;
+      }
+
+      setProfile(null);
+      setProfileError(fallback.error.message || "Failed to load profile");
+      return;
+    }
+
+    setProfile(null);
+    setProfileError(error.message || "Failed to load profile");
   }
 
   async function loginEmail(email, password) {
@@ -63,20 +85,34 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await supabase.auth.signOut();
-    setProfile(null);
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (_err) {
+      // Ignore network/logout API issues; we still clear local auth state below.
+    } finally {
+      setSession(null);
+      setProfile(null);
+      setProfileError("");
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (_storageErr) {
+        // Ignore storage cleanup errors in restricted browser contexts.
+      }
+    }
   }
 
   const value = useMemo(
     () => ({
       session,
       profile,
+      profileError,
       loading,
       loginEmail,
       loginCoder,
       logout,
     }),
-    [session, profile, loading]
+    [session, profile, profileError, loading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

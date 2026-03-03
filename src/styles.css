@@ -28,9 +28,15 @@ body {
 }
 
 input,
-button {
+button,
+select,
+textarea {
   font: inherit;
   padding: 0.55rem 0.65rem;
+}
+
+textarea {
+  width: 100%;
 }
 
 button {
@@ -62,8 +68,34 @@ button {
   color: #b30000;
 }
 
+.success {
+  color: #0f6a20;
+}
+
 .centered {
   min-height: 30vh;
   display: grid;
   place-items: center;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.gap {
+  gap: 0.75rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid #dbe2ef;
 }
