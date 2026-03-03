@@ -1,4 +1,5 @@
-const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
+const rawAllowedOrigin = Deno.env.get("ALLOWED_ORIGIN");
+const allowedOrigin = rawAllowedOrigin && rawAllowedOrigin.trim() ? rawAllowedOrigin.trim() : "*";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": allowedOrigin,

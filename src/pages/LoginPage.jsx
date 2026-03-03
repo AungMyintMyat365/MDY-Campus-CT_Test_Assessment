@@ -1,9 +1,9 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
-  const { session, profile, profileError, loginEmail, loginCoder, logout } = useAuth();
+  const { session, profile, profileError, loginEmail, loginCoder, logout, configError } = useAuth();
   const [mode, setMode] = useState("staff");
   const [error, setError] = useState("");
 
@@ -41,6 +41,12 @@ export default function LoginPage() {
       <h1>CT Assessment Platform</h1>
       <p>Sign in as staff or coder.</p>
 
+      {configError ? (
+        <p className="error">
+          Setup needed: {configError}. Create <code>.env</code> from <code>.env.example</code> and restart dev server.
+        </p>
+      ) : null}
+
       <div className="tabs">
         <button className={mode === "staff" ? "active" : ""} onClick={() => setMode("staff")}>
           Coach / Lead
@@ -53,17 +59,17 @@ export default function LoginPage() {
       {mode === "staff" ? (
         <form className="card" onSubmit={handleStaffSubmit}>
           <label>Email</label>
-          <input type="email" value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} required />
+          <input type="email" value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)} autoComplete="username" required />
           <label>Password</label>
-          <input type="password" value={staffPassword} onChange={(e) => setStaffPassword(e.target.value)} required />
+          <input type="password" value={staffPassword} onChange={(e) => setStaffPassword(e.target.value)} autoComplete="current-password" required />
           <button type="submit">Sign In</button>
         </form>
       ) : (
         <form className="card" onSubmit={handleCoderSubmit}>
           <label>Coder ID</label>
-          <input value={coderId} onChange={(e) => setCoderId(e.target.value)} required />
+          <input value={coderId} onChange={(e) => setCoderId(e.target.value)} autoComplete="username" required />
           <label>Password</label>
-          <input type="password" value={coderPassword} onChange={(e) => setCoderPassword(e.target.value)} required />
+          <input type="password" value={coderPassword} onChange={(e) => setCoderPassword(e.target.value)} autoComplete="current-password" required />
           <button type="submit">Sign In</button>
         </form>
       )}

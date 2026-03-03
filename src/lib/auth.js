@@ -1,6 +1,11 @@
-﻿import { supabase } from "./supabaseClient";
+import { supabase, supabaseConfigError } from "./supabaseClient";
+
+function missingConfigResponse() {
+  return { data: null, error: new Error(supabaseConfigError ?? "Supabase is not configured") };
+}
 
 export async function signInCoachOrLead({ email, password }) {
+  if (!supabase) return missingConfigResponse();
   return supabase.auth.signInWithPassword({ email, password });
 }
 
@@ -13,6 +18,7 @@ function buildCoderAlias(coderId) {
 }
 
 export async function signInCoder({ coderId, password }) {
+  if (!supabase) return missingConfigResponse();
   const email = buildCoderAlias(coderId);
   return supabase.auth.signInWithPassword({ email, password });
 }

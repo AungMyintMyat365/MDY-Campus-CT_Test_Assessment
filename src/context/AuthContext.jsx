@@ -1,5 +1,5 @@
-﻿import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { supabase, supabaseConfigError } from "../lib/supabaseClient";
 import { signInCoachOrLead, signInCoder } from "../lib/auth";
 
 const AuthContext = createContext(null);
@@ -8,9 +8,14 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [profileError, setProfileError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!supabaseConfigError);
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     let isMounted = true;
 
     async function bootstrap() {
@@ -42,6 +47,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function loadProfile(userId) {
+    if (!supabase) return;
+
     const { data, error } = await supabase
       .from("profiles")
       .select("id, full_name, nickname, role, email, coder_id")
@@ -85,6 +92,13 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    if (!supabase) {
+      setSession(null);
+      setProfile(null);
+      setProfileError("");
+      return;
+    }
+
     try {
       await supabase.auth.signOut({ scope: "local" });
     } catch (_err) {
@@ -111,6 +125,7 @@ export function AuthProvider({ children }) {
       loginEmail,
       loginCoder,
       logout,
+      configError: supabaseConfigError,
     }),
     [session, profile, profileError, loading]
   );
