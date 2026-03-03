@@ -1,0 +1,17 @@
+﻿-- Example timetable seed. Replace coach_id values before insert.
+-- Saturday and Sunday: 10:00, 13:00, 14:30, 16:00
+-- Wednesday, Thursday, Friday: 16:00
+
+-- insert into public.classes (name, coach_id, day_of_week, start_time)
+-- values
+--   ('Saturday 10AM', 'COACH_UUID', 'Saturday', '10:00'),
+--   ('Saturday 1PM', 'COACH_UUID', 'Saturday', '13:00'),
+--   ('Saturday 2:30PM', 'COACH_UUID', 'Saturday', '14:30'),
+--   ('Saturday 4PM', 'COACH_UUID', 'Saturday', '16:00'),
+--   ('Sunday 10AM', 'COACH_UUID', 'Sunday', '10:00'),
+--   ('Sunday 1PM', 'COACH_UUID', 'Sunday', '13:00'),
+--   ('Sunday 2:30PM', 'COACH_UUID', 'Sunday', '14:30'),
+--   ('Sunday 4PM', 'COACH_UUID', 'Sunday', '16:00'),
+--   ('Wednesday 4PM', 'COACH_UUID', 'Wednesday', '16:00'),
+--   ('Thursday 4PM', 'COACH_UUID', 'Thursday', '16:00'),
+--   ('Friday 4PM', 'COACH_UUID', 'Friday', '16:00');
