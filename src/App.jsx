@@ -4,9 +4,12 @@ import LoginPage from "./pages/LoginPage";
 import LeadDashboardPage from "./pages/LeadDashboardPage";
 import LeadCoachesPage from "./pages/LeadCoachesPage";
 import LeadClassesPage from "./pages/LeadClassesPage";
+import LeadMonitoringPage from "./pages/LeadMonitoringPage";
 import CoachDashboardPage from "./pages/CoachDashboardPage";
 import CoachCodersPage from "./pages/CoachCodersPage";
 import CoderDashboardPage from "./pages/CoderDashboardPage";
+import AssessmentsPage from "./pages/AssessmentsPage";
+import ResultsPage from "./pages/ResultsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 export default function App() {
@@ -39,6 +42,14 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/lead/monitoring"
+        element={
+          <ProtectedRoute allowedRoles={["center_lead"]}>
+            <LeadMonitoringPage />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/coach/dashboard"
@@ -62,6 +73,22 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={["coder"]}>
             <CoderDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/assessments"
+        element={
+          <ProtectedRoute allowedRoles={["center_lead", "coach"]}>
+            <AssessmentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/results"
+        element={
+          <ProtectedRoute allowedRoles={["center_lead", "coach", "coder"]}>
+            <ResultsPage />
           </ProtectedRoute>
         }
       />

@@ -17,8 +17,10 @@ Starter implementation for the school assessment system.
 ## Supabase Setup
 1. Create a Supabase project.
 2. Run SQL from `supabase/schema.sql`.
-3. Optionally run `supabase/seed.sql` after replacing coach IDs.
-4. Deploy edge function stubs from `supabase/functions/*`.
+3. Run migration SQL from `supabase/migrations/*.sql`.
+4. For auth/profile consistency checks, run `supabase/bootstrap/verify_and_fix_profile_setup.sql` after filling center lead user id/email values.
+5. Optionally run `supabase/seed.sql` after replacing coach IDs.
+6. Deploy edge function stubs from `supabase/functions/*`.
 
 ## Current Status
 Implemented:

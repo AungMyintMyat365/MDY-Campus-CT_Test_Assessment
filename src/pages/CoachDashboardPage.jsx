@@ -16,6 +16,8 @@ export default function CoachDashboardPage() {
       </ul>
       <div className="row gap">
         <Link to="/coach/coders">Manage Coders</Link>
+        <Link to="/assessments">Assessments</Link>
+        <Link to="/results">Results</Link>
       </div>
       <button onClick={logout}>Log Out</button>
     </main>

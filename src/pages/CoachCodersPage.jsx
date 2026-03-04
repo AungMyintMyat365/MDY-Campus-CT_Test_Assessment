@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { coderDisplayName, profileDisplayName } from "../lib/displayName";
-import { supabase } from "../lib/supabaseClient";
+import { supabase, supabaseConfigError } from "../lib/supabaseClient";
 
 export default function CoachCodersPage() {
   const { profile } = useAuth();
@@ -11,65 +11,81 @@ export default function CoachCodersPage() {
   const [coders, setCoders] = useState([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [importing, setImporting] = useState(false);
-  const [csvText, setCsvText] = useState("full_name,nickname,coder_id,class_id,temp_password");
+  const [loading, setLoading] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
   const [coderId, setCoderId] = useState("");
   const [tempPassword, setTempPassword] = useState("");
   const [classId, setClassId] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const [movingCoderId, setMovingCoderId] = useState("");
   const [toClassId, setToClassId] = useState("");
   const [reason, setReason] = useState("");
+  const [moving, setMoving] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (profile?.id) {
+      loadData();
+    }
+  }, [profile?.id]);
 
   async function loadData() {
-    const classesRes = await supabase
-      .from("classes")
-      .select("id, name, day_of_week, start_time")
-      .eq("coach_id", profile?.id)
-      .order("day_of_week");
-
-    if (classesRes.error) {
-      setError(classesRes.error.message);
+    if (!supabase) {
+      setError(supabaseConfigError || "Supabase client is not configured");
       return;
     }
+    if (!profile?.id) {
+      setError("Profile is not loaded yet. Please wait and retry.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    const [classesRes, allClassesRes, codersRes] = await Promise.all([
+      supabase.from("classes").select("id, name, day_of_week, start_time").eq("coach_id", profile.id).order("day_of_week"),
+      supabase.from("classes").select("id, name").order("name"),
+      supabase
+        .from("class_enrollments")
+        .select("coder_id, class_id, profiles!class_enrollments_coder_id_fkey(full_name, nickname, coder_id), classes!class_enrollments_class_id_fkey(name)")
+        .eq("status", "active"),
+    ]);
+
+    if (classesRes.error || allClassesRes.error || codersRes.error) {
+      setError(classesRes.error?.message || allClassesRes.error?.message || codersRes.error?.message || "Failed to load coder data");
+      setLoading(false);
+      return;
+    }
+
     const coachClasses = classesRes.data ?? [];
-    const coachIds = coachClasses.map((cls) => cls.id);
+    const coachClassIds = coachClasses.map((cls) => cls.id);
+    const activeCoders = (codersRes.data ?? []).filter((row) => coachClassIds.includes(row.class_id));
+    const schoolClasses = allClassesRes.data ?? [];
+
     setClasses(coachClasses);
+    setAllClasses(schoolClasses);
+    setCoders(activeCoders);
+
     if (!classId && coachClasses.length) setClassId(coachClasses[0].id);
+    if (!toClassId && schoolClasses.length) setToClassId(schoolClasses[0].id);
+    if (!movingCoderId && activeCoders.length) setMovingCoderId(activeCoders[0].coder_id);
 
-    const allClassesRes = await supabase.from("classes").select("id, name").order("name");
-    if (allClassesRes.error) {
-      setError(allClassesRes.error.message);
-      return;
-    }
-    setAllClasses(allClassesRes.data ?? []);
-    if (!toClassId && allClassesRes.data?.length) setToClassId(allClassesRes.data[0].id);
-
-    const codersRes = await supabase
-      .from("class_enrollments")
-      .select("coder_id, class_id, profiles!class_enrollments_coder_id_fkey(full_name, nickname, coder_id), classes!class_enrollments_class_id_fkey(name)")
-      .eq("status", "active");
-    if (codersRes.error) {
-      setError(codersRes.error.message);
-      return;
-    }
-
-    const ownCoders = (codersRes.data ?? []).filter((row) => coachIds.includes(row.class_id));
-    setCoders(ownCoders);
-    if (!movingCoderId && ownCoders.length) setMovingCoderId(ownCoders[0].coder_id);
+    setLoading(false);
   }
 
   async function handleCreateCoder(e) {
     e.preventDefault();
     setError("");
     setMessage("");
+    setCreating(true);
+
+    if (!supabase) {
+      setError(supabaseConfigError || "Supabase client is not configured");
+      setCreating(false);
+      return;
+    }
 
     const { data, error: invokeError } = await supabase.functions.invoke("create-coder-account", {
       body: {
@@ -82,11 +98,13 @@ export default function CoachCodersPage() {
     });
 
     if (invokeError) {
-      setError(invokeError.message);
+      setError(invokeError.message || "Failed to create coder");
+      setCreating(false);
       return;
     }
     if (data?.error) {
       setError(data.error);
+      setCreating(false);
       return;
     }
 
@@ -95,13 +113,21 @@ export default function CoachCodersPage() {
     setCoderId("");
     setTempPassword("");
     setMessage("Coder account created.");
-    loadData();
+    await loadData();
+    setCreating(false);
   }
 
   async function handleMoveCoder(e) {
     e.preventDefault();
     setError("");
     setMessage("");
+    setMoving(true);
+
+    if (!supabase) {
+      setError(supabaseConfigError || "Supabase client is not configured");
+      setMoving(false);
+      return;
+    }
 
     const { data, error: invokeError } = await supabase.functions.invoke("move-coder-class", {
       body: {
@@ -112,48 +138,20 @@ export default function CoachCodersPage() {
     });
 
     if (invokeError) {
-      setError(invokeError.message);
+      setError(invokeError.message || "Failed to move coder");
+      setMoving(false);
       return;
     }
     if (data?.error) {
       setError(data.error);
+      setMoving(false);
       return;
     }
 
     setReason("");
     setMessage("Coder moved.");
-    loadData();
-  }
-
-  async function handleImportCoders(e) {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-    setImporting(true);
-
-    const { data, error: invokeError } = await supabase.functions.invoke("import-coders-csv", {
-      body: { csv: csvText },
-    });
-
-    setImporting(false);
-    if (invokeError) {
-      setError(invokeError.message);
-      return;
-    }
-    if (data?.error) {
-      setError(data.error);
-      return;
-    }
-
-    setMessage(`Import done. Success: ${data.success_count}, Failed: ${data.failure_count}`);
-    loadData();
-  }
-
-  async function handleCsvFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    setCsvText(text);
+    await loadData();
+    setMoving(false);
   }
 
   return (
@@ -176,19 +174,25 @@ export default function CoachCodersPage() {
         <input type="password" value={tempPassword} onChange={(e) => setTempPassword(e.target.value)} minLength={8} required />
         <label>Class</label>
         <select value={classId} onChange={(e) => setClassId(e.target.value)} required>
-          <option value="" disabled>Select class</option>
+          <option value="" disabled>
+            Select class
+          </option>
           {classes.map((cls) => (
-            <option key={cls.id} value={cls.id}>{cls.name}</option>
+            <option key={cls.id} value={cls.id}>
+              {cls.name}
+            </option>
           ))}
         </select>
-        <button type="submit">Create Coder</button>
+        <button type="submit" disabled={creating}>{creating ? "Creating..." : "Create Coder"}</button>
       </form>
 
       <form className="card" onSubmit={handleMoveCoder}>
         <h2>Move Coder</h2>
         <label>Coder</label>
         <select value={movingCoderId} onChange={(e) => setMovingCoderId(e.target.value)} required>
-          <option value="" disabled>Select coder</option>
+          <option value="" disabled>
+            Select coder
+          </option>
           {coders.map((row) => (
             <option key={row.coder_id} value={row.coder_id}>
               {coderDisplayName(row.profiles)} ({row.profiles?.coder_id}) - {row.classes?.name}
@@ -197,27 +201,23 @@ export default function CoachCodersPage() {
         </select>
         <label>To Class (all school classes)</label>
         <select value={toClassId} onChange={(e) => setToClassId(e.target.value)} required>
-          <option value="" disabled>Select destination class</option>
+          <option value="" disabled>
+            Select destination class
+          </option>
           {allClasses.map((cls) => (
-            <option key={cls.id} value={cls.id}>{cls.name}</option>
+            <option key={cls.id} value={cls.id}>
+              {cls.name}
+            </option>
           ))}
         </select>
         <label>Reason</label>
         <input value={reason} onChange={(e) => setReason(e.target.value)} />
-        <button type="submit">Move Coder</button>
-      </form>
-
-      <form className="card" onSubmit={handleImportCoders}>
-        <h2>Import Coders CSV</h2>
-        <label>Upload CSV File</label>
-        <input type="file" accept=".csv,text/csv" onChange={handleCsvFile} />
-        <label>Or Paste CSV</label>
-        <textarea value={csvText} onChange={(e) => setCsvText(e.target.value)} rows={8} />
-        <button type="submit" disabled={importing}>{importing ? "Importing..." : "Import Coders"}</button>
+        <button type="submit" disabled={moving}>{moving ? "Moving..." : "Move Coder"}</button>
       </form>
 
       {message ? <p className="success">{message}</p> : null}
       {error ? <p className="error">{error}</p> : null}
+      {loading ? <p>Loading coders...</p> : null}
 
       <section className="card">
         <h2>Active Coders In Your Classes</h2>

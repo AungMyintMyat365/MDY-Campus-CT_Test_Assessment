@@ -1,5 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import { coderDisplayName } from "../lib/displayName";
+import { Link } from "react-router-dom";
 
 export default function CoderDashboardPage() {
   const { profile, logout } = useAuth();
@@ -13,6 +14,9 @@ export default function CoderDashboardPage() {
         <li>Open Google Form links</li>
         <li>Track marks and completion status</li>
       </ul>
+      <div className="row gap">
+        <Link to="/results">Results</Link>
+      </div>
       <button onClick={logout}>Log Out</button>
     </main>
   );

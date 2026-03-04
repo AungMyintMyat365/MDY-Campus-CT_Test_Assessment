@@ -17,6 +17,9 @@ export default function LeadDashboardPage() {
       <div className="row gap">
         <Link to="/lead/coaches">Manage Coaches</Link>
         <Link to="/lead/classes">Manage Classes</Link>
+        <Link to="/assessments">Assessments</Link>
+        <Link to="/results">Results</Link>
+        <Link to="/lead/monitoring">Monitoring</Link>
       </div>
       <button onClick={logout}>Log Out</button>
     </main>
